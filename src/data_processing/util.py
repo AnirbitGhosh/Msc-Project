@@ -40,7 +40,7 @@ if __name__ == "__main__":
     for file in file_list:
         with open(os.path.join(frame_dir, file), 'rb') as f:
             data = np.array(pickle.load(f))
-        
+            
         gray_images = rgb_to_gray(data)
         
         # Set a threshold to binarize the grayscale images
