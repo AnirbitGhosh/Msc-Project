@@ -1,5 +1,5 @@
 # DATA
-data/videos
+data/
 src/model/gde_ddim/dataset
 
 # RESULTS
