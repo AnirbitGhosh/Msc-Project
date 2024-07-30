@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import math
 from abc import abstractmethod
 
-def norm_layer(channels):
+def group_norm_layer(channels):
     return nn.GroupNorm(32, channels)
 
 class TimestepBlock(nn.Module):
@@ -12,63 +12,63 @@ class TimestepBlock(nn.Module):
     def forward(self, x, emb):
         pass
 
-class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
-    def forward(self, x, t_emb, c_emb, mask):
+class TimestepSeqEmbedding(nn.Sequential, TimestepBlock):
+    def forward(self, x, time_emb, cond_emb, mask):
         for layer in self:
             if isinstance(layer, TimestepBlock):
-                x = layer(x, t_emb, c_emb, mask)
+                x = layer(x, time_emb, cond_emb, mask)
             else:
                 x = layer(x)
         return x
 
 class AttentionBlock(nn.Module):
-    def __init__(self, channels, num_heads=1):
+    def __init__(self, ch, heads=1):
         super(AttentionBlock, self).__init__()
-        self.num_heads = num_heads
-        assert channels % num_heads == 0
+        self.num_heads = heads
+        assert ch % heads == 0
         
-        self.norm = norm_layer(channels)
-        self.qkv = nn.Conv2d(channels, channels * 3, kernel_size=1, bias=False)
-        self.proj = nn.Conv2d(channels, channels, kernel_size=1)
+        self.norm = group_norm_layer(ch)
+        self.proj = nn.Conv2d(ch, ch, kernel_size=1)
+        self.qkv = nn.Conv2d(ch, ch * 3, kernel_size=1, bias=False)
         
     def forward(self, x):
         B, C, H, W = x.shape
         qkv = self.qkv(self.norm(x))
         q, k, v = qkv.reshape(B * self.num_heads, -1, H * W).chunk(3, dim=1)
         scale = 1. / math.sqrt(math.sqrt(C // self.num_heads))
-        attn = torch.einsum("bct,bcs->bts", q * scale, k * scale)
-        attn = attn.softmax(dim=-1)
-        h = torch.einsum("bts,bcs->bct", attn, v).reshape(B, -1, H, W)
+        attention = torch.einsum("bct,bcs->bts", q * scale, k * scale)
+        attention = attention.softmax(dim=-1)
+        h = torch.einsum("bts,bcs->bct", attention, v).reshape(B, -1, H, W)
         return self.proj(h) + x
 
-class ResidualBlock(TimestepBlock):
-    def __init__(self, in_channels, out_channels, time_channels, cond_channels, dropout):
-        super(ResidualBlock, self).__init__()
+class ResBlock(TimestepBlock):
+    def __init__(self, in_ch, out_ch, t_ch, cond_ch, dropout):
+        super(ResBlock, self).__init__()
         
-        self.conv1 = nn.Sequential(
-            norm_layer(in_channels),
+        self.conv_1 = nn.Sequential(
+            group_norm_layer(in_ch),
             nn.SiLU(),
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1)
         )
-        self.time_emb = nn.Sequential(
+        self.time_embedding = nn.Sequential(
             nn.SiLU(),
-            nn.Linear(time_channels, out_channels)
+            nn.Linear(t_ch, out_ch)
         )
-        self.cond_conv = nn.Sequential(
-            nn.Conv2d(cond_channels, out_channels, kernel_size=3, padding=1),
+        self.condition_conv = nn.Sequential(
+            nn.Conv2d(cond_ch, out_ch, kernel_size=3, padding=1),
             nn.SiLU()
         )
-        self.conv2 = nn.Sequential(
-            norm_layer(out_channels),
+        self.conv_2 = nn.Sequential(
+            group_norm_layer(out_ch),
             nn.SiLU(),
             nn.Dropout(p=dropout),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1)
         )
-        self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
+        self.skip_conn = nn.Conv2d(in_ch, out_ch, kernel_size=1) if in_ch != out_ch else nn.Identity()
     
     def forward(self, x, t, cond_img, mask):
-        h = self.conv1(x)
-        emb_t = self.time_emb(t)
-        emb_cond = self.cond_conv(cond_img) * mask[:, None, None, None]
+        h = self.conv_1(x)
+        emb_t = self.time_embedding(t)
+        emb_cond = self.condition_conv(cond_img) * mask[:, None, None, None]
         h += emb_t[:, :, None, None] + emb_cond
-        return self.conv2(h) + self.shortcut(x)
+        return self.conv_2(h) + self.skip_conn(x)
