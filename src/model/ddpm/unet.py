@@ -1,3 +1,12 @@
+'''
+The code is modified from
+https://github.com/tatakai1/classifier_free_ddim,
+https://github.com/TeaPearce/Conditional_Diffusion_MNIST,
+
+Diffusion model is based on "CLASSIFIER-FREE DIFFUSION GUIDANCE"
+https://arxiv.org/abs/2207.12598,
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,10 +16,9 @@ from abc import abstractmethod
 from .blocks import AttentionBlock, ResBlock, TimestepSeqEmbedding, group_norm_layer
 
 
-
 class Unet(nn.Module):
-    def __init__(self, in_ch=1, cond_ch=1, model_ch=128, output_ch=1, res_block_num=2,  attn_res=(8, 16), dropout=0.2, 
-                 channel_mult=(1, 2, 2), conv_resample=True, heads=4):
+    def __init__(self, in_ch=2, cond_ch=1, model_ch=128, output_ch=2, res_block_num=2,  attn_res=(8, 16), dropout=0, 
+                 channel_mult=(1, 2, 2, 2), conv_resample=True, heads=4):
         super().__init__()
         self.in_ch = in_ch
         self.cond_ch = cond_ch
@@ -137,7 +145,7 @@ class DownSample(nn.Module):
     def forward(self, x):
         return self.out(x)
     
-def time_embedding(timesteps, dim, max_period=500):
+def time_embedding(timesteps, dim, max_period=1000):
     half = dim // 2
     freqs = torch.exp(
         -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half

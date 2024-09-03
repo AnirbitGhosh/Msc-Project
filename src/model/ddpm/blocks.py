@@ -1,3 +1,12 @@
+'''
+The code is modified from
+https://github.com/tatakai1/classifier_free_ddim,
+https://github.com/TeaPearce/Conditional_Diffusion_MNIST,
+
+Diffusion model is based on "CLASSIFIER-FREE DIFFUSION GUIDANCE"
+https://arxiv.org/abs/2207.12598,
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
