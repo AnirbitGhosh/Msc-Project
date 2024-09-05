@@ -48,7 +48,7 @@ README.md               # Project documentation
 We have implemented a conditional denoising diffusion probablistic model (DDPM) that utilizes classifier-free guidance to predict the spatial geometry of wildfire spread given an initial state of the fire as input. The model generates a predicted view of the fire 30 hours in the future, constrained upon the initial fire state.
 
 The DDPM is implemented using a U-Net architecture as the backbone for the denoising (reverse diffusion) process. The model learns the geophsyical parameters influencing wildfire propagation from Cellular Automata simulated sequences of fire progression localized in the Chimney Fire ecoregion of Southern California. Shown below is a sample of the simulated data sequence utilized in training the DDPM. 
-![CA simulations](readme_data\CA_simulations.png)
+![CA simulations](readme_data/CA_simulations.png)
 
 The model is trained on data pairs, with a target image of fire at time t + 30hrs and a conditional image of the fire at time t. The DDPM iteratively adds noise to the target image during forward diffusion. Features extracted from the conditional image is then concatenated along the channel dimension to the noisy target. They are collectively denoised during the reverse diffusion process to learn the distribution of noise added conditioned on the initial fire state. 
 
