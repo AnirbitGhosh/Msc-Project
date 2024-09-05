@@ -1,17 +1,11 @@
-**MSc Project**
+# MSc Project
 
-Using Diffusion Models to Generate Scenarios of Wildfire Spread
-
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Model](#model)
-- [Results](#results)
-  - [Predicting wildfire progression](#predicting-wildfire-progression)
-  - [Predicting likelihood of fire susceptibility](#predicting-likelihood-of-fire-susceptibility)
+**Using Diffusion Models to Generate Scenarios of Wildfire Spread**
 
 ## Overview
+Real-time wildfire spread forecasting is crucial for ensuring public safety to enable timely evacuations and effective deployment of firefighting resources with the recent increase in wildfires. It facilitates protection of critical infrastructure and sensitive ecosystems. Physics based simulation models such as cellular automata and machine learning alternatives such as three dimensional vector quantized variational autoencoders have been used in the task of predicting wildfire spread patterns. However, the simulation based methods pose the drawback of requiring substantial quantities of region-specific data to train, leading to a significant computational bottleneck. Machine learning models on the other hand, despite being easy to train, are deterministic in nature as they encode input data into discrete latent spaces with fixed mappings. A deterministic model fails to capture the inherent randomness and variability involved in the non-linear and complex interactions between different factors that influence wildfires as their fixed latent space is not nuanced enough to characterize the dynamic effect of these interactions. In this paper, a generative alternative is proposed using an image-conditioned guided Diffusion model. The model has been trained using sequences of CA simulated wildfire spread data based on the recent Chimney Fire event in California. The diffusion model was shown to successfully generate coherent spatio-temporal sequences of wildfire progression with similarity to ground truth simulated data  ranging from a peak SSIM of $0.94$ decreasing to $0.67$ and RMSE over burned area ranging from $0.10$ to $0.25$ over 30 hours intervals upto 120 hours. This was shown to outperform a deterministic Autoencoder baseline modelwith SSIM ranging from $0.9$ to $0.65$ and an RMSE over burned area of $0.12$ to $0.30$ at the same time intervals. The diffusion model also illustrated improving precision and F1-Score over long-range predictions relative to the deterministic baseline indicating high fidelity in generated one-shot fire spread predictions. We further leveraged the stochastic nature of diffusion models to predict multiple fire spread scenarios from the same starting state to capture the expected fire susceptibility likelihood of the region at that time. The generated burn probability maps coincided with the CA simulated data with a temporal distribution of KL Divergence ranging from $0.035$ to $0.04$ and a Wasserstein Distance of $0.04$ and $0.1$ over 120 hours.  
+
+By leveraging the strengths of diffusion models, we aim to overcome the limitations of current deterministic wildfire forecasting models, thus providing a more robust tool for timely decision-making during fire emergencies. In summary, the main contributions of this paper are as follows:
 * Seek to enhance the accuracy and efficiency of wildfire propagation predictions through the novel application of diffusion models, ultimately contributing to improved environmental safety and resource management.
 * Stochastic predictions of diffusion models provide an advantage over existing deterministic models to account for the inherently variable nature of wildfire dynamics, allowing for the generation of fire susceptibility maps showing the expected likelihood of fire spread. 
 * An implemented CA model is used to generate image sequences of fire propagation based on the geophyiscal dynamics of the Chimney Fire event to train and evaluate the diffusion model.
@@ -39,6 +33,7 @@ src
 │   |   ├── training_script.py            # script to train ddpm 
 │   |   ├── unet.py                       # Unet architecture for ddpm
 │   ├── __init__.py                       # makes directory to module
+│   ├── wildfire_ddpm.pt                  # trained model weights
 ├── evaluation/                           # notebooks used to test and evaluate ddpm
 │   ├── diffusion_distribution.ipynb      # test stochastic outputs of ddpm in predicting wildfires
 │   ├── evaluate_model.ipynb              # Compare baseline model to ddpm
